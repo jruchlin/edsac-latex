@@ -1,0 +1,542 @@
+\documentclass[11pt]{article}
+%\usepackage{times}  % for testing
+\usepackage{edsac}
+\usepackage[normalem]{ulem}
+
+\addtolength{\textheight}{\headheight}
+\addtolength{\textheight}{\headsep}
+\addtolength{\textheight}{2\topmargin}
+\setlength{\headheight}{0pt}
+\setlength{\headsep}{0pt}
+\setlength{\topmargin}{0pt}
+
+\title{A \LaTeX\ Package for Typesetting EDSAC Programs}
+\author{Lee Wittenberg\\\texttt{leew@alumni.stanford.edu}}
+
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
+\newcommand{\sect}[2]{\par\vspace{\baselineskip}#1\quad\uline{#2}}
+\newcommand{\hang}{\leftskip=1em\parindent=-1em}
+\newenvironment{tape}{%
+    \par\begin{tabular}{@{}p{.25\textwidth}%
+        >{\hang}p{.565\textwidth}}
+}{%
+    \end{tabular}\par
+}
+
+\begin{document}
+\maketitle
+
+\noindent
+This document describes and demonstrates the use of \texttt{edsac.sty}, a
+(currently experimental) \LaTeX\ package for typesetting EDSAC
+programs in a manner similar to that in \emph{The Preparation of
+Programs for an Electronic Digital Computer}\footnote{Hereinafter
+referred to as WWG.} by Wilkes, Wheeler and
+Gill (1951).  The package is loaded with the usual
+\begin{quote}
+    \verb"\usepackage{edsac}"
+\end{quote}
+and it provides the
+\texttt{edsac} environment and a number of supporting commands.
+Package options are described below (Section~\ref{options}).
+
+\section{The \texttt{edsac} Environment}
+
+EDSAC programs are typically typeset with a single order (or control
+combination) per line in 3 columns, separated by vertical rules:
+the location of the order, the order itself, and an optional comment.
+For example, a trivial program loaded at location~56 that does
+absolutely nothing:
+\begin{edsac}{56}
+\nonum  | \T 56 \K | load from location 56  \\
+        | \X    \F | do nothing             \\
+        | \Z    \F | stop
+\end{edsac}
+would be specified in \LaTeX\ as:
+\begin{quote}\small
+\begin{verbatim}
+\begin{edsac}{56}
+\nonum  | \T 56 \K | load from location 56  \\
+        | \X    \F | do nothing             \\
+        | \Z    \F | stop
+\end{edsac}
+\end{verbatim}
+\end{quote}
+which resembles a typical \texttt{tabular} environment, except that a
+vertical bar (`\verb"|"') is used instead of an ampersand (`\verb"&"')
+to separate columns.  In fact, a \texttt{tabular} environment is used
+to implement the \texttt{edsac} environment.
+
+As you can see, each code letter is specified by the corresponding
+single-character
+macro (non-alphabetics are specified by macros based on the substitute
+characters used
+in Martin Campbell-Kelly's simulator: `\verb"\@"' for `$\theta$',
+`\verb"\!"' for `$\phi$', `\verb"\&"' for `$\Delta$',
+and `\verb"\#"' for `$\pi$').  The perforator characters for ``erase''
+and ``blank tape'' are specified by the macros `\verb"\*"' and
+`\verb"\."', respectively.  The \verb"\nonum" command is used for
+control combinations (which are not placed in the store), and the
+environment's single argument specifies the
+location of the starting order.
+
+\section{A Second Example}
+Campbell-Kelly's ``Hello, World'' program provides a slightly more
+complex example:
+\begin{edsac}{0}
+\nonum       |   \T 64 \K | Load from location 64   \\
+\nonum       |   \G    \K | Set $\theta$ parameter  \\
+\from{Start} |   \Z    \F | Stop                    \\
+             |   \O  5 \@ | Letter shift            \\
+             |   \O  6 \@ | Print `H'               \\
+             |   \O  7 \@ | Print `I'               \\
+             |   \Z    \F | Stop                    \\
+             |\| \*    \F | Letters                 \\
+             |\| \H    \F | `H'                     \\
+             |\| \I    \F | `I'                     \\
+\nonum       |   \E    \Z | \longnote{2}{10em}
+                              {Enter at location $0\theta$} \\
+\nonum       |   \P    \F | 
+\end{edsac}
+and introduces the \verb"\from" command to indicate the target of a
+transfer order and the `\verb"\|"' order column prefix to indicate
+constant values.
+\begin{quote}\small
+\begin{verbatim}
+\begin{edsac}{0}
+\nonum       |   \T 64 \K | Load from location 64   \\
+\nonum       |   \G    \K | Set $\theta$ parameter  \\
+\from{Start} |   \Z    \F | Stop                    \\
+             |   \O  5 \@ | Letter shift            \\
+             |   \O  6 \@ | Print `H'               \\
+             |   \O  7 \@ | Print `I'               \\
+             |   \Z    \F | Stop                    \\
+             |\| \*    \F | Letters                 \\
+             |\| \H    \F | `H'                     \\
+             |\| \I    \F | `I'                     \\
+\nonum       |   \E    \Z | \longnote{2}{10em}
+                              {Enter at location $0\theta$} \\
+\nonum       |   \P    \F | 
+\end{edsac}
+\end{verbatim}
+\end{quote}
+
+The environment also provides the \verb"\multifrom" command for when an
+order is targeted by multiple \verb"E"/\verb"G" orders, as in
+subroutine~C7 (WWG, pp.\ 118--20).  The order numbers in the
+\verb"\multifrom" argument are separated by \verb"\\"'s.  For example,
+line~34 of~C7 would be typeset with ``\verb"\multifrom{30\\31}".''
+
+This example also introduces the \verb"\longnote" command (which can
+be used outside of an \texttt{edsac} environment).  It
+takes 3 arguments:  (1) the number of rows the note extends over,
+(2) the width to allow for the note, and (3) the note itself.  For
+a note that must extend onto a following page, an optional argument,
+\verb"[t"$n$\verb"]" or \verb"[b"$n$\verb"]", may specify the number
+($n<1^{\mbox{st}}$ arg)
+of commented lines on the top or bottom, respectively,
+of the current page.
+
+\section{More Features}
+The \texttt{edsac} environment also provides the order column
+prefixes `\verb"\_"' and `\verb"\("'.  The former underlines the order
+it introduces, and is used to indicate a transfer of control.  The
+latter parenthesizes the order, and is used to indicate that an order
+will be changed during execution.  Examples of both are found in the
+code for Section~\ref{full-demo}, as are examples of the badly-named
+(and not-particularly-well-implemented)
+\verb"\eindent" construct, used to keep the columns aligned in consecutive
+\texttt{edsac} environments.
+
+The `\verb"\#"' construct is typeset appropriately whether used as a
+pseudo-order or to modify a code letter.  For example, the code
+\begin{quote}\small
+\begin{verbatim}
+    | \#     \F | figure shift  \\
+    | \A 26\#\@ | add long word at 26
+\end{verbatim}
+\end{quote}
+would be typeset as
+\bgroup\setlength{\erulewidth}{0pt}
+\begin{edsac}{0}
+\nonum  | \#     \F | figure shift  \\
+\nonum  | \A 26\#\@ | add long word at 26
+\end{edsac}
+\egroup
+
+Sometimes, as in the previous example and
+the WWG explanation (p.~22) of the ``Wheeler jump,'' the
+vertical rules are not wanted, and the starting address is a generic
+$m$ or~$n$.
+% \enorules is obsolete & will eventually be removed
+%The \verb"\enorules" command specifies that the following
+%\texttt{edsac} environment will be typeset without vertical rules.
+The rigid length \verb"\erulewidth" controls the width of the vertical
+rules, and can even be set to \verb"0pt", if desired.
+If the \verb"\elineprefix" command is defined at entry, the
+\texttt{edsac} environment generates line numbers with the specified
+prefix added to all non-zero line numbers.  These commands are
+automatically undefined at the end of the environment so that
+any program listings that follow will be typeset in the default format.
+\bgroup\setlength{\erulewidth}{0pt}
+\newcommand{\startloc}{m}
+\newcommand{\elineprefix}{\ensuremath{\startloc}}
+\begin{edsac}{0}
+\multicolumn{1}{c}{Number of}           \\
+\multicolumn{1}{c}{storage}             \\
+\multicolumn{1}{c}{\uline{location}}
+    | \multicolumn{1}{c}{\uline{Order}} \\
+        | \A $m\enspace$ \F             \\
+        | \G $n\enspace$ \F     \\\nonum\\
+\multicolumn{3}{l}{The orders in the subroutine
+                   are as follows:}
+\\\nonum\global\def\startloc{n}\eresetline\\
+\nonum  |   \G       \K     \\
+        |   \A    3  \F     \\
+        |   \T $p+2$ \@     \\
+        |       | \longnote{3}{.4\textwidth}
+                    {\hang subroutine operational
+                     orders\\($p$ in number)}\\
+\multicolumn{1}{c}{\ensuremath{\ldots}}
+    \global\def\startloc{n+p}\eresetline[1]\\
+        |                   \\
+        |\( \Z       \F
+\end{edsac}
+\egroup
+
+In the corresponding \LaTeX\ code, which follows, note the use of the 
+standard \texttt{tabular} \verb"\multicolumn" command, which works as
+usual, to interject non-program material into the listing.  Note also
+the use of \verb"\eresetline" to adjust line numbers and the plain
+\TeX\ command \verb"\global\def" to redefine \verb"\startloc" within
+the environment (because \LaTeX's \verb"\renewcommand" only works
+locally, within the current column).
+\begin{quote}\small
+\begin{verbatim}
+\setlength{\erulewidth}{0pt}
+\newcommand{\startloc}{m}
+\newcommand{\elineprefix}{\ensuremath{\startloc}}
+\begin{edsac}{0}
+\multicolumn{1}{c}{Number of}           \\
+\multicolumn{1}{c}{storage}             \\
+\multicolumn{1}{c}{\uline{location}}
+    | \multicolumn{1}{c}{\uline{Order}} \\
+        | \A $m\enspace$ \F             \\
+        | \G $n\enspace$ \F     \\\nonum\\
+\multicolumn{3}{l}{The orders in the subroutine
+                   are as follows:}
+\\\nonum\global\def\startloc{n}\eresetline\\
+\nonum  |   \G       \K     \\
+        |   \A    3  \F     \\
+        |   \T $p+2$ \@     \\
+        |       | \longnote{3}{.4\textwidth}
+                    {\hang subroutine operational
+                     orders\\($p$ in number)}\\
+\multicolumn{1}{c}{\ensuremath{\ldots}}
+    \global\def\startloc{n+p}\eresetline[1]\\
+        |                   \\
+        |\( \Z       \F
+\end{edsac}
+\end{verbatim}
+\end{quote}
+
+Finally, similar to \verb"\elineprefix", if
+\verb"\elinesuffix" is defined prior to an \texttt{edsac} environment
+it adds the
+specified code at the end of each line number.  This is rarely needed,
+but is useful in situations, such as in library subroutine A3, where
+integers are placed directly in the code:
+\newcommand{\elinesuffix}{\makebox[0pt][l]{\ensuremath{\pi\theta}}}
+% avoid conflict with | in edsac environment:
+\newcommand{\mc}{\multicolumn{1}{l|}{Part I:}}
+\newcommand{\num}[1]
+    {\multicolumn{2}{p{7.5em}}{\hfill#1}\skipword}
+\begin{edsac}{60}
+\mc
+    | \multicolumn{1}{c}{\fbox{\parbox[t]{4em}{\centering R9\\modified}}}
+    | \parbox[t]{.5\textwidth}{\small\hang order 3 in R2 is altered to
+                                     S~40~D.  Thus the integers are
+                                     placed in the store negatively
+                                     and become $-10^{-n}, n=0\ldots7$} \\
+\nonum  | \multicolumn{2}{l}{T $60\pi\theta$ K} \\
+        | \num{17 179 869 184 F}                \\
+        | \num{ 1 717 986 918 F}                \\
+        | \num{   171 798 692 F}                \\
+        | \num{    17 179 869 F}                \\
+        | \num{     1 717 987 F}                \\
+        | \num{       171 799 F}                \\
+        | \num{        17 180 F}                \\
+        | \num{         1 718 $\pi$}
+\end{edsac}
+
+In addition to the use of \verb"\elineprefix", the \LaTeX\ code has
+a number of interesting features.  It makes great use of the
+\verb"\multicolumn" command (the \verb"\mc" definition is necessary because
+a `\verb"|"' in a preamble option causes problems when used within
+an \texttt{edsac} environment).  The \verb"\skipword" command (in
+\verb"\num")
+increments the line number counter for each long word value.
+\begin{quote}\small
+\begin{verbatim}
+\newcommand{\elinesuffix}
+    {\makebox[0pt][l]{\ensuremath{\pi\theta}}}
+% avoid conflict with | in edsac environment:
+\newcommand{\mc}{\multicolumn{1}{l|}{Part I:}}
+\newcommand{\num}[1]
+    {\multicolumn{2}{p{7.5em}}{\hfill#1}\skipword}
+\begin{edsac}{60}
+\mc
+    | \multicolumn{1}{c}
+        {\fbox{\parbox[t]{4em}{\centering R9\\modified}}}
+    | \parbox[t]{.5\textwidth}
+        {\small\hang order 3 in R2 is altered to
+         S~40~D.  Thus the integers are
+         placed in the store negatively
+         and become $-10^{-n}, n=0\ldots7$}     \\
+\nonum  | \multicolumn{2}{l}{T $60\pi\theta$ K} \\
+        | \num{17 179 869 184 F}                \\
+        | \num{ 1 717 986 918 F}                \\
+        | \num{   171 798 692 F}                \\
+        | \num{    17 179 869 F}                \\
+        | \num{     1 717 987 F}                \\
+        | \num{       171 799 F}                \\
+        | \num{        17 180 F}                \\
+        | \num{         1 718 $\pi$}
+\end{edsac}
+\end{verbatim}
+\end{quote}
+
+\section{Package Options}\label{options}
+The package provides two options:  \verb"wwg" and \verb"rulecolor".
+The former uses square brackets (\`a la WWG) instead of curly braces
+for long comments, the latter specifies a color for rendering the
+rules in code listings.  Options may be specified when the package is
+loaded (e.g., \verb"\usepackage[wwg]{edsac}") or using the
+\verb"\edsacoptions" command.  The following section is rendered
+using the options \verb"wwg" and \verb"rulecolor=red".
+
+\section{A Fuller Demonstration}\label{full-demo}
+\edsacoptions{wwg,rulecolor=red}
+For a fuller demonstration,
+Section 7-3 from WWG (pp.~51--53) does the job nicely, and uses most
+of the techniques described above (see the \LaTeX\ source for details):
+
+\pagebreak
+\sect{\hspace{-\parindent}7-3}{Alternative method for Example 2.}
+
+The example given in Section 7-2 will now be repeated in a revised
+form making use of assembly subroutine M1.  The components of the
+program are
+\begin{quote}\leftskip=.25\textwidth
+    H sequence,\\
+    Master routine,\\
+    Auxiliary subroutine,\\
+    Library subroutines R9, Q2, P1, and D6.
+\end{quote}
+R9, however, is not dealt with by M1 but is automatically placed in
+its usual position (56--70).  The H sequence consists of a number of
+pseudo-orders which, in Section 7-2 were included at the end of the
+master routine.
+
+Storage space is allocated as follows:
+\begin{quote}
+    \begin{tabular}{c<{\quad}>{\quad}l<{\hspace{-2in}}}
+        56--70  &   R9                                      \\
+        71--75  &   unused                                  \\
+          76    &   reference order for master routine  
+                        \qquad\longnote{5}{6em}{%
+                          See\\Section\\4-62\hspace{-6em}}  \\
+          77    &   \phantom{refernc}do.\phantom{rder for~}
+                        \thinspace{}auxiliary               \\
+          78    &   \phantom{refernc}do.\phantom{rder for~}
+                        \thinspace{}Q2                      \\
+          79    &   \phantom{refernc}do.\phantom{rder for~}
+                        \thinspace{}P1                      \\
+          80    &   \phantom{refernc}do.\phantom{rder for~}
+                        \thinspace{}D6                      \\
+        82--97  &   M1                                      \\
+        98--\phantom{99}
+                &   H sequence
+    \end{tabular}
+\end{quote}
+
+\sect{7-31}{Make up of tape.}\\[2pt]\mbox{}
+
+\begin{tape}
+\fbox{R9}        &  R9 begins with P K T 56 K, so that it is placed in
+                    locations 56--70.   \\
+\\
+space
+\end{tape}
+\begin{tape}\\
+P K T 82 K          & First order of M1 goes into 82.       \\
+\fbox{M1}\\
+P 76 F              & Reference order of master\qquad 
+                        \makebox[0pt][l]{\longnote{4}{5em}%
+                            {parameters\\used by M1}}       \\
+                    & \quad routine goes into 76.           \\
+T 98 K              & First order of H sequence             \\
+                    & \quad goes into 98.
+\end{tape}
+\begin{tape}
+\\space\\\\
+P Z G K \\
+E 82 K T F          & Calls in M1, which places P 98 F in 45. \\
+\\
+\fbox{H sequence}   & Placed with first order in 98.
+\end{tape}
+
+\begin{tape}
+\\space\\\\
+P Z G K \\
+T 92 K T $\phi$     & Sets M1 ready to deal with master routine.       \\
+E 82 K I F          & Calls in M1, which places reference order in 76. \\
+\\
+\fbox{Master routine}
+\end{tape}
+\begin{tape}
+\\space\\\\
+P Z G K \\
+E 82 K P F          & Calls in M1, which places reference order in 77. \\
+\\
+\fbox{Auxiliary}
+\end{tape}
+\enlargethispage{.2\baselineskip}
+\begin{tape}
+\\space\\\\
+P Z G K \\
+E 82 K P F          & Calls in M1, which places reference order in 78. \\
+\\
+T 45 F              & \longnote{3}{.45\textwidth}%
+                        {Plants parameters required by Q2.} \\
+P 72 D \\
+P ~1 $\,\phi$ \\
+\\
+\fbox{Q2}
+\end{tape}
+\begin{tape}
+\\space\\\\
+P Z G K \\
+E 82 K P F          & Calls in M1, which places reference order in 79. \\
+\\
+\fbox{P1}
+\end{tape}
+\begin{tape}
+P Z G K \\
+E 82 K P F          & Calls in M1, which places reference order in 80. \\
+\\
+\fbox{D6}
+\end{tape}
+\begin{tape}
+E 25 K              & \longnote{2}{.4\textwidth}%
+                        {Sends control to the first order of the
+                         master routine.}   \\
+E $\phi$ P F
+\end{tape}
+
+\sect{7-32}{H sequence.}
+\newcommand{\eindent}{\rlap{H}{\phantom{$\mbox{Start}\to{}$}}}
+\begin{edsac}{0}
+    |\| \&      \F | line feed          \\
+    |\| \@      \F | carriage return    \\
+    |\| \K 2048 \F | $15\cdot2^{-4}$    \\
+    |\| \R      \F | $4\cdot2^{-4}$     \\
+    |\| \E      \F | $3\cdot2^{-4}$     \\
+    |\| \I      \F | $8\cdot2^{-4}$     \\
+    |\| \#      \F | figure shift
+\end{edsac}
+
+\sect{7-33}{Master routine.}
+\begin{edsac}{0}
+\nonum  |   \G     \K |                                     \\
+\from{Start}
+        |   \O   6 \H | figures                             \\
+        |   \O   1 \H | carriage return                     \\
+        |   \O     \H | line feed                           \\
+        |   \T  72 \D | \longnote{3}{15em}%
+                        {\hang Sets limits of integration: 0 to
+                         72D,\\1/2 to 74 D.\hspace{-15em}}  \\
+        |   \A   5 \H |                                     \\
+        |   \T  74 \D |                                     \\
+        |   \A   6 \@ | \longnote{2}{6em}{calls in Q2}      \\
+        |\_ \G   2 \! |                                     \\
+\from{Q2}
+        |   \A   8 \@ | \longnote{2}{6em}{calls in P1}      \\
+        |\_ \G   3 \! |                                     \\
+        |\| \P  10 \F | parameter for P1                    \\
+\from{P1}
+        |   \O   6 \H | extra output order to print last figure \\
+        |   \Z     \F |
+\end{edsac}
+
+\sect{7-34}{Auxiliary subroutine}
+\newcommand{\eindent}{\enspace\phantom{$\mbox{Start}\to{}$}}
+\begin{edsac}{0}
+\nonum  |  \G    \K |                               \\
+        |  \A  3 \F |                               \\
+        |  \T 15 \@ | plant link                    \\
+        |  \H    \D |                               \\
+        |  \V    \D | $x^2$ to accumulator          \\
+        |  \A  3 \H | $4\cdot2^{-4}+x^2$            \\
+        |  \Y    \F |                               \\
+        |  \T    \D | $0.25+x^2$ to 0D              \\
+        |  \H  2 \H | $15\cdot2^{-4}$               \\
+        |  \V    \D |                               \\
+        |  \Y    \F |                               \\
+        |  \T  4 \D | $15/16\cdot(0.25+x^2)$ to 4D  \\
+        |  \A  4 \H |                               \\
+        |  \T    \D | $3/16$ to 0D                  \\
+        |  \A 13 \@ | \longnote{2}{.5\textwidth}%
+                        {\hang{}Calls in D6, which places
+                         the integrand in~0D.}     \\
+        |\_\G  4 \! |                               \\
+\from{D6}
+      |\_\(\Z    \F | link
+\end{edsac}
+
+\section*{Known Issues}
+\begin{itemize}
+    \item
+    The \verb"\eindent" command is very badly named (and its implementation is
+    somewhat problematic).  This is also true for a number of the
+    other commands.  Suggestions for improvement (both in naming and
+    implementation) would be greatly appreciated.
+    \item
+    It is technically possible to have the characters `P', `Q', etc.\
+    declared ``active'' and use them as-is (i.e., without a backslash)
+    in the order part of a line.  However, my \TeX{pertise} doesn't
+    extent that far (and I'm not completely sure it's a Good Idea).
+    Any help in this area would be welcomed.
+    \item
+    The \texttt{edsac} environment argument really should be
+    optional, with zero as the default.  However, \LaTeX\ won't
+    recognize `\verb"|"' as a column separator when it is looking for
+    the `\verb"["' that would introduce the optional argument value.
+    I couldn't figure
+    out a clean way to deal with this.  A non-optional argument seemed
+    the simplest solution.
+    \item
+    WWG listings ``stretch'' the arrow that would be used in our
+    \verb"\from" command.  Can anyone suggest how to do this in
+    \LaTeX?
+    \item
+    The \texttt{edsac} environment is based on \texttt{tabular}, and
+    therefore, cannot extend past the end of the page.  It would be
+    nice if \texttt{supertabular} or \texttt{longtable} could be used
+    instead.  However,  I wasn't able to accomplish this.
+    \item
+    All dimensions used in the package are based on the
+    characteristics of a document's primary font. Therefore the
+    defined commands \emph{should} work correctly regardless of
+    typeface and type size.  However, it has only been minimally
+    tested---only with Computer Modern and Times Roman at 10, 11 and
+    12-point sizes.
+\end{itemize}
+
+Any bug reports (and fixes) or suggestions for improvement
+should be addressed to the author at \texttt{leew@alumni.stanford.edu}.
+Even if you find no bugs, please let me know if you find this package
+useful (so I can let you know about any updates and modifications).
+
+\end{document}

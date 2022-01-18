@@ -1,0 +1,292 @@
+\ProvidesPackage{edsac}
+\NeedsTeXFormat{LaTeX2e}
+\RequirePackage{array}
+\RequirePackage{kvoptions}
+\RequirePackage{colortbl}
+
+\DeclareStringOption[black]{rulecolor}
+\DeclareBoolOption[false]{wwg}
+\ProcessKeyvalOptions*
+
+\newcommand{\edsacoptions}[1]{\setkeys{edsac}{#1}}
+
+\newif\ifedsac@const
+\edsac@constfalse
+\newcounter{edsac@constcount}
+
+% obsolete -- will eventually be removed
+\newif\ifedsac@rules
+\edsac@rulestrue
+\newcommand{\enorules}{\edsac@rulesfalse}
+% replacement for \enorules
+\newlength{\erulewidth}
+\setlength{\erulewidth}{0.4pt}
+
+\newif\ifedsac@pi
+\edsac@pifalse
+\newlength{\edsac@piwidth}
+\settowidth{\edsac@piwidth}{\ensuremath{\pi}}
+
+\newcounter{edsac@eline}
+%\newcounter{estartline}  % obsolete -- use environment parameter instead
+
+\newlength{\edsac@lineextent}
+\settoheight{\edsac@lineextent}{X}
+\newlength{\edsac@linedepth}
+\settodepth{\edsac@linedepth}{g}
+\addtolength{\edsac@lineextent}{\edsac@linedepth}
+
+\newlength{\edsac@unitlength}
+\setlength{\edsac@unitlength}{.1\baselineskip}
+
+\newenvironment{edsac}[1]{%
+    \begin{quote}
+    \catcode`\|=4       % use | instead of & for column alignment
+    \catcode`\&=12      % and make & just an"other" char
+
+    \setcounter{edsac@eline}{#1}
+	\setlength\arrayrulewidth{\erulewidth}
+
+    \newcommand{\eresetline}[1][0]{\setcounter{edsac@eline}{##1}}%
+    \newcommand{\skipword}{\addtocounter{edsac@eline}{1}}%
+    \ifx\elinesuffix\undefined\let\elinesuffix=\relax\fi
+    \newcommand{\edsac@lineno}{\ensuremath{%
+        \ifx\elineprefix\undefined\theedsac@eline\else\elineprefix
+            \ifnum\value{edsac@eline}>0+\theedsac@eline\else\hspace{.75em}\fi\fi
+        \mbox{\elinesuffix}\hspace{.75em}%
+        \skipword
+    }}
+
+    \newcommand{\edsac@order}{%
+        \catcode`\ =9\catcode`\^^I=9\catcode`\^^M=9\catcode`\&=12}
+% define alphabetic function/pseudo-order macros
+    \edsac@funcdef{P}\edsac@funcdef{Q}\edsac@funcdef{W}\edsac@funcdef{E}%
+    \edsac@funcdef{R}\edsac@funcdef{T}\edsac@funcdef{Y}\edsac@funcdef{U}%
+    \edsac@funcdef{I}\edsac@funcdef{O}\edsac@funcdef{J}\edsac@funcdef{S}%
+    \edsac@funcdef{Z}\edsac@funcdef{K}\edsac@funcdef{F}\edsac@funcdef{D}%
+    \edsac@funcdef{H}\edsac@funcdef{N}\edsac@funcdef{M}\edsac@funcdef{L}%
+    \edsac@funcdef{X}\edsac@funcdef{G}\edsac@funcdef{A}\edsac@funcdef{B}%
+    \edsac@funcdef{C}\edsac@funcdef{V}%
+% define non-alphabetic pseudo-order macros
+    \edsac@funcdef[\ensuremath{\pi}]{p}\let\#=\p\let\p=\relax
+    \edsac@funcdef{*}\edsac@funcdef{.}%
+    \edsac@funcdef[\ensuremath{\theta}]{@}%
+    \edsac@funcdef[\ensuremath{\Delta}]{&}%
+    \edsac@funcdef[\ensuremath{\phi}]{!}%
+
+    \renewcommand{\(}{\hspace{4em}\makebox[-4em]{(\makebox[5em]{\hfill)}}}
+    \renewcommand{\_}{\makebox[0pt]{\hspace{3.6em}%
+        \color{\edsac@rulecolor}\rule[-.33\baselineskip]{6.5em}{0.4pt}}}
+    \renewcommand{\|}{\edsac@consttrue
+        \addtocounter{edsac@constcount}{1}}
+
+    \ifx\eindent\undefined\global\let\edsac@indent=\relax\else
+        \newcommand{\edsac@indent}{\eindent\global\let\edsac@indent=\relax}\fi
+
+    \ifedsac@rules
+        \newcommand{\nonum}{\multicolumn{1}{>{\edsac@indent}r|}{}}
+    \else
+        \newcommand{\nonum}{\multicolumn{1}{>{\edsac@indent}r}{}}
+    \fi
+
+    \newcommand{\multifrom}[1]{\from{%
+        \bgroup
+        \ifedsac@wwg\let\edsac@brace=\rbrack
+            \else\let\edsac@brace=\rbrace\fi
+        \newdimen\fromheight \newdimen\yadjust 
+        \settoheight{\fromheight}{\shortstack{##1}}%
+        \yadjust=.5\fromheight
+        \advance\yadjust by -.5ex
+\iftrue
+        \newdimen\strutheight%
+        \settoheight{\strutheight}{\shortstack{##1}}%
+        \multiply \strutheight by 75    % -- 75% looks okay for stacks of
+        \divide \strutheight by 100     %    2-4 lines (how to better calc?)
+        \raisebox{0pt}[0pt][0pt]%
+        {$\left.\rule{0pt}{\strutheight}%
+            \raisebox{-\yadjust}[0pt][0pt]%
+                {\shortstack[r]{##1}}\right\edsac@brace$}%
+\else % obsolete WWG-style using picture environment for rules
+        \advance\fromheight by 1.5ex
+        \newcount\xheight
+        \xheight=\fromheight
+        \multiply\xheight by 10
+        \newdimen\oneem
+        \oneem=1em
+        \newcount\mcount
+        \mcount=\oneem
+        \divide\xheight by \mcount
+        \raisebox{-\yadjust}[0pt][0pt]{\shortstack[r]{##1}%
+            \color{\edsac@rulecolor}%
+            \setlength{\unitlength}{.1em}%
+            \begin{picture}(0,0)(-3,3)
+                \put(0,0){\line(0,1){\xheight}}
+                \put(0,0){\line(-1,0){7.5}}
+                \put(0,\xheight){\line(-1,0){7.5}}
+            \end{picture}
+        }
+\fi
+        \egroup}}
+
+    \ifedsac@rules
+        \newcommand{\from}[1]{\multicolumn{1}{>{\edsac@indent}r|}%
+            {\ensuremath{\mbox{##1}\to{}\edsac@lineno}}}
+    \else
+        \newcommand{\from}[1]{\multicolumn{1}{>{\edsac@indent}r}%
+            {\ensuremath{\mbox{##1}\to{}\edsac@lineno}}}
+    \fi
+
+    \global\let\saved@CT@arc@=\CT@arc@
+    \arrayrulecolor{\edsac@rulecolor}
+
+    \ifedsac@rules
+        \begin{tabular}%
+            {>{\edsac@indent\edsac@lineno}r|%
+             >{\quad\edsac@order}p{5.6em}|%
+             >{\qquad}l<{\hspace{-12em}}}
+    \else
+        \begin{tabular}%
+            {>{\edsac@indent\edsac@lineno}r%
+             >{\quad\edsac@order}p{5.6em}%
+             >{\qquad}l<{\hspace{-12em}}}
+    \fi
+}{%
+    \global\let\eindent=\undefined
+    \global\let\elineprefix=\undefined
+    \global\let\elinesuffix=\undefined
+    \global\edsac@rulestrue
+    \end{tabular}
+    \global\let\CT@arc@=\saved@CT@arc@
+    \end{quote}
+}
+
+% define a single function/pseudo-order macro
+\newcommand{\edsac@funcdef}[2][.]{%
+    \expandafter\def\csname#2\endcsname
+        {\ifedsac@const\hspace{-2em}\makebox[2em]{%
+            \color{\edsac@rulecolor}
+            \newdimen\ruledepth\ruledepth=10\edsac@unitlength
+            \newdimen\ruleheight\ruleheight=\ruledepth
+            \advance \ruledepth by -\edsac@lineextent
+            \advance \ruledepth by -\edsac@unitlength
+            \ifnum\theedsac@constcount=1\advance \ruleheight
+                by -2\edsac@unitlength\fi
+            \raisebox{-\ruledepth}[0pt][0pt]%
+                {\rule{0.4pt}{\ruleheight}}%
+            \thinspace
+            \raisebox{-\ruledepth}[0pt][0pt]%
+                {\rule{0.4pt}{\ruleheight}}%
+        }\else
+            \setcounter{edsac@constcount}{0}%
+        \fi
+% define alphabetic code letter macros (P-S not really valid, but
+% included for completeness)
+    \edsac@codedef{P}\edsac@codedef{Q}\edsac@codedef{W}\edsac@codedef{E}%
+    \edsac@codedef{R}\edsac@codedef{T}\edsac@codedef{Y}\edsac@codedef{U}%
+    \edsac@codedef{I}\edsac@codedef{O}\edsac@codedef{J}\edsac@codedef{S}%
+    \edsac@codedef{Z}\edsac@codedef{K}\edsac@codedef{F}\edsac@codedef{D}%
+    \edsac@codedef{H}\edsac@codedef{N}\edsac@codedef{M}\edsac@codedef{L}%
+    \edsac@codedef{X}\edsac@codedef{G}\edsac@codedef{A}\edsac@codedef{B}%
+    \edsac@codedef{C}\edsac@codedef{V}%
+% define non-alphabetic code "letter" macros
+    \renewcommand{\#}{\edsac@pitrue}% \pi is special
+    \edsac@codedef{*}\edsac@codedef{.}%
+    \edsac@codedef[\ensuremath{\theta}]{@}%
+    \edsac@codedef[\ensuremath{\Delta}]{d}\let\&=\d%
+    \edsac@codedef[\ensuremath{\phi}]{!}%
+     \makebox[.5em]{\ifx#1.#2\else#1\fi}\enspace%
+     \expandafter\hfill}
+}
+
+% define a single code letter macro
+\newcommand{\edsac@codedef}[2][.]{%
+    \expandafter\def\csname#2\endcsname
+        {\ifedsac@pi\llap{\enspace}{\ensuremath{\pi}}\edsac@pifalse
+         \else\enspace\fi
+        \makebox[.5em]{\ifx#1.#2\else#1\fi}\enspace}%
+}
+
+\newcommand{\longnote}[4][c-.]{\bgroup
+    \ifedsac@wwg\let\edsac@brace=\rbrack
+        \else\let\edsac@brace=\rbrace\fi
+    \def\split##1##2\split{\def\part{##1}\def\actuallines{##2}}%
+    \split#1\split
+    \if c\part\def\actuallines{#2}\fi
+    \setlength{\unitlength}{\edsac@unitlength}%
+    \def\fulllines{#2}%
+    \newcount\actual\actual=\actuallines%
+    \multiply\actual by 10%
+    \advance\actual by -2     % for space between consecutive notes
+    \newcount\ystart\ystart=-\actual%
+    \if t\part\advance\ystart by 10\fi
+    \advance\actual by \if b\part -10\else\if t\part -10\else 0\fi\fi
+    %\newcount\mid\mid=\actual
+    %\divide\mid by 2%
+\iftrue
+    \newdimen\raisetext\raisetext=0pt%
+    \actual=\fulllines\multiply\actual by 10%
+    \divide\actual by 2%
+    \newcount\diff\diff=\fulllines\advance\diff by -\actuallines
+    \multiply\diff by 10%(\actuallines)%
+    \ystart=-\actual\advance\ystart by 6%
+    \hspace*{-2em}\raisebox{\ystart\unitlength}[0pt][0pt]
+        {\makebox[2em][c]{%
+            \if b\part
+                \raisebox{\diff\unitlength}{\fi
+            $\left.\begin{picture}(0,\actual)\end{picture}\right\edsac@brace$%
+            \if b\part }\fi
+            \if t\part\hspace{-1em}%
+                \newdimen\notedepth
+                \settodepth{\notedepth}{\parbox{#3}{\raggedright#4}}%
+                \newdimen\spaceleft\spaceleft=\actual\unitlength
+                \advance\spaceleft by -\diff\unitlength
+				\ifdim\spaceleft<0pt
+					\global\raisetext=\actual\unitlength
+					\global\divide\raisetext by 2%
+				\else
+					\ifdim\spaceleft<\notedepth
+						\global\raisetext=\notedepth\fi
+				\fi
+                \begin{picture}(0,0)
+                    \put(0,-\actual){\makebox(0,0)[lb]
+                        {\color{white}{\rule{1em}{\diff\unitlength}}}}%
+                \end{picture}\quad
+            \fi
+            \if b\part\hspace{-1em}
+                \newdimen\noteheight
+                \settoheight{\noteheight}{\parbox{#3}{\raggedright#4}}%
+                \newdimen\spaceleft\spaceleft=\actual\unitlength
+                \advance\spaceleft by -\diff\unitlength
+                \global\raisetext=\diff\unitlength
+                \ifdim\spaceleft<\noteheight
+                    \global\raisetext=\actual\unitlength
+                    \global\advance\raisetext by -\noteheight
+				\fi
+                \begin{picture}(0,0)
+                    \put(0,\actual){\makebox(0,0)[lb]
+                        {\color{white}{\rule{1em}{\diff\unitlength}}}}
+                \end{picture}\quad
+            \fi
+        }\makebox[#3][l]{\raisebox{\raisetext}
+            {\parbox{#3}{\raggedright#4}}}}\qquad
+    \else % obsolete WWG-style using picture environment for rules
+        \color{\edsac@rulecolor}
+        \raisebox{\edsac@lineextent}[0pt][0pt]{%
+            \begin{picture}(0,0)%
+                \if b\part
+                        \put(-8,-2){\makebox(0,0){%
+                            \textcolor{\edsac@rulecolor}{$\vdots$}}}
+                \else
+                    \put(-8,0){\line(-1,0){5}}\fi
+                \put(-8,\ystart){\line(0,1){\actual}}
+                \if t\part
+                        \put(-8,\ystart){\makebox(0,-8){%
+                            \textcolor{\edsac@rulecolor}{$\vdots$}}}
+                \else
+                    \put(-8,\ystart){\line(-1,0){5}}\fi
+                \put(-3,-\mid){\makebox(0,0)[lc]%
+                    {\parbox{#3}{\normalcolor\raggedright#4}}}
+            \end{picture}%
+            \hbox to #3{}\qquad}%
+    \fi
+    \egroup}
